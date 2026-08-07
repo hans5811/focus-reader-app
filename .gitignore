@@ -90,3 +90,6 @@ typings/
 
 # Electron-Forge
 out/
+
+# Built Go helper
+bin/

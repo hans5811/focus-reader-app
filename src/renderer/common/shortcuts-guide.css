@@ -1,0 +1,176 @@
+/*
+ * Shared by both renderers. Colours come from each surface's own custom
+ * properties, so the guide inherits the overlay's translucency or the Library's
+ * panel styling without duplicating a palette.
+ */
+
+.shortcuts-guide {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  color: rgb(var(--fg));
+  font-family: var(--prose-font);
+  text-align: left;
+}
+
+.shortcuts-guide.variant-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  padding: 16px 22px;
+  overflow-y: auto;
+  border-radius: inherit;
+  background: rgb(var(--bg) / 0.985);
+  backdrop-filter: blur(30px);
+}
+
+.shortcuts-guide.variant-window {
+  gap: 16px;
+}
+
+.guide-header {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.guide-header h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 680;
+}
+
+.variant-window .guide-header h2 { font-size: 22px; }
+
+.guide-intro {
+  max-width: 62ch;
+  margin: 6px 0 0;
+  color: rgb(var(--muted));
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+
+.guide-close {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid rgb(var(--rule));
+  border-radius: 7px;
+  background: rgb(var(--fg) / 0.05);
+  color: rgb(var(--muted));
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.guide-close:hover { background: rgb(var(--fg) / 0.14); color: rgb(var(--fg)); }
+
+.guide-conflict {
+  margin: 0;
+  padding: 7px 11px;
+  border: 1px solid rgb(var(--accent) / 0.45);
+  border-radius: 8px;
+  background: rgb(var(--accent) / 0.1);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* Two columns when there is room; the overlay is often too narrow. */
+.guide-body {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 700px) {
+  .guide-body { grid-template-columns: 1fr 1fr; }
+}
+
+.guide-section h3 {
+  margin: 0 0 3px;
+  font-size: 11px;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: rgb(var(--muted));
+}
+
+.guide-note {
+  margin: 0 0 9px;
+  max-width: 46ch;
+  color: rgb(var(--muted));
+  font-size: 11.5px;
+  line-height: 1.5;
+  opacity: 0.85;
+}
+
+.guide-list { margin: 0; }
+
+.guide-row {
+  display: grid;
+  grid-template-columns: minmax(84px, auto) 1fr;
+  gap: 10px;
+  align-items: baseline;
+  padding: 3px 0;
+}
+
+.guide-row dt { display: flex; gap: 3px; align-items: center; }
+.guide-row dd { margin: 0; font-size: 12.5px; line-height: 1.45; }
+
+.guide-sep {
+  margin: 0 2px;
+  color: rgb(var(--muted));
+  font-size: 10px;
+}
+
+.shortcuts-guide kbd {
+  display: inline-block;
+  min-width: 1.7em;
+  padding: 2px 6px;
+  border: 1px solid rgb(var(--rule));
+  border-radius: 6px;
+  background: rgb(var(--fg) / 0.08);
+  color: rgb(var(--fg));
+  font-family: var(--mono-font);
+  font-size: 11.5px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* A conflict is marked by text as well as colour (SPEC 13). */
+.guide-row.has-conflict kbd {
+  border-color: rgb(var(--accent) / 0.6);
+  border-style: dashed;
+}
+
+.guide-flag { color: rgb(var(--accent)); font-size: 11.5px; }
+
+.guide-footer {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 10px;
+  border-top: 1px solid rgb(var(--rule));
+  color: rgb(var(--muted));
+  font-size: 11.5px;
+}
+
+.guide-footer button {
+  padding: 5px 10px;
+  border: 1px solid rgb(var(--rule));
+  border-radius: 7px;
+  background: rgb(var(--fg) / 0.05);
+  color: rgb(var(--fg));
+  font-family: inherit;
+  font-size: 11.5px;
+  cursor: pointer;
+}
+
+.guide-footer button:hover { background: rgb(var(--fg) / 0.14); }
+
+@media (prefers-contrast: more) {
+  .guide-note, .guide-intro { opacity: 1; }
+  .shortcuts-guide kbd { border-width: 2px; }
+}

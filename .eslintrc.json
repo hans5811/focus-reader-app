@@ -1,7 +1,8 @@
 {
+  "root": true,
   "env": {
     "browser": true,
-    "es6": true,
+    "es2022": true,
     "node": true
   },
   "extends": [
@@ -12,5 +13,27 @@
     "plugin:import/electron",
     "plugin:import/typescript"
   ],
-  "parser": "@typescript-eslint/parser"
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "ecmaVersion": 2022,
+    "sourceType": "module",
+    "ecmaFeatures": { "jsx": true }
+  },
+  "ignorePatterns": [".vite/", "out/", "bin/", "node_modules/", "dist/"],
+  "rules": {
+    "import/no-unresolved": "off",
+    "@typescript-eslint/no-non-null-assertion": "off",
+    "@typescript-eslint/no-unused-vars": [
+      "error",
+      { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }
+    ]
+  },
+  "overrides": [
+    {
+      "files": ["test/**/*.ts", "test/**/*.tsx"],
+      "rules": {
+        "@typescript-eslint/no-empty-function": "off"
+      }
+    }
+  ]
 }

@@ -1,8 +1,8 @@
 {
   "name": "focus-reader",
-  "productName": "focus-reader",
+  "productName": "Focus Reader",
   "version": "1.0.0",
-  "description": "My Electron application description",
+  "description": "Local-first menu-bar RSVP reader for long technical documents and coding-agent responses.",
   "main": ".vite/build/main.js",
   "private": true,
   "scripts": {
@@ -10,7 +10,12 @@
     "package": "electron-forge package",
     "make": "electron-forge make",
     "publish": "electron-forge publish",
-    "lint": "eslint --ext .ts,.tsx ."
+    "build:helper": "cd readerctl && CGO_ENABLED=0 go build -trimpath -o ../bin/readerctl .",
+    "test:helper": "cd readerctl && go test ./...",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint --ext .ts,.tsx src test"
   },
   "keywords": [],
   "author": {
@@ -20,24 +25,30 @@
   "license": "MIT",
   "devDependencies": {
     "@electron-forge/cli": "^7.11.2",
-    "@electron-forge/maker-deb": "^7.11.2",
-    "@electron-forge/maker-rpm": "^7.11.2",
-    "@electron-forge/maker-squirrel": "^7.11.2",
     "@electron-forge/maker-zip": "^7.11.2",
     "@electron-forge/plugin-auto-unpack-natives": "^7.11.2",
     "@electron-forge/plugin-fuses": "^7.11.2",
     "@electron-forge/plugin-vite": "^7.11.2",
     "@electron/fuses": "^1.8.0",
-    "@types/electron-squirrel-startup": "^1.0.2",
+    "@types/prismjs": "^1.26.6",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
     "@typescript-eslint/eslint-plugin": "^5.62.0",
     "@typescript-eslint/parser": "^5.62.0",
+    "@vitejs/plugin-react": "^4.7.0",
     "electron": "43.3.0",
     "eslint": "^8.57.1",
     "eslint-plugin-import": "^2.32.0",
-    "typescript": "~4.5.4",
-    "vite": "^5.4.21"
+    "typescript": "~5.9",
+    "vite": "^5.4.21",
+    "vitest": "^4.1.10"
   },
   "dependencies": {
-    "electron-squirrel-startup": "^1.0.1"
+    "mdast-util-from-markdown": "^2.0.3",
+    "mdast-util-gfm": "^3.1.0",
+    "micromark-extension-gfm": "^3.0.0",
+    "prismjs": "^1.30.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
   }
 }

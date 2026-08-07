@@ -1,49 +1,65 @@
 import type { ForgeConfig } from '@electron-forge/shared-types';
-import { MakerSquirrel } from '@electron-forge/maker-squirrel';
 import { MakerZIP } from '@electron-forge/maker-zip';
-import { MakerDeb } from '@electron-forge/maker-deb';
-import { MakerRpm } from '@electron-forge/maker-rpm';
 import { VitePlugin } from '@electron-forge/plugin-vite';
 import { FusesPlugin } from '@electron-forge/plugin-fuses';
 import { FuseV1Options, FuseVersion } from '@electron/fuses';
+import { execFileSync } from 'node:child_process';
+import fs from 'node:fs';
+import path from 'node:path';
+
+const BIN_DIR = path.join(__dirname, 'bin');
+
+/**
+ * Build the Go capture helper into `bin/readerctl` so it can be shipped as an
+ * extra resource at `Contents/Resources/bin/readerctl` (SPEC 10.1).
+ */
+function buildReaderctl() {
+  fs.mkdirSync(BIN_DIR, { recursive: true });
+  execFileSync('go', ['build', '-trimpath', '-o', path.join(BIN_DIR, 'readerctl'), '.'], {
+    cwd: path.join(__dirname, 'readerctl'),
+    stdio: 'inherit',
+    env: { ...process.env, CGO_ENABLED: '0' },
+  });
+}
 
 const config: ForgeConfig = {
   packagerConfig: {
+    name: 'Focus Reader',
+    appBundleId: 'com.focusreader.app',
     asar: true,
+    // The Go helper lives outside the asar so hooks can exec it directly.
+    extraResource: [BIN_DIR],
+    extendInfo: {
+      // Menu-bar-first: no Dock icon, no window at launch (SPEC 4.1).
+      LSUIElement: true,
+      CFBundleDocumentTypes: [
+        {
+          CFBundleTypeName: 'Markdown or plain text document',
+          CFBundleTypeRole: 'Viewer',
+          LSHandlerRank: 'Alternate',
+          LSItemContentTypes: ['net.daringfireball.markdown', 'public.plain-text'],
+        },
+      ],
+    },
   },
   rebuildConfig: {},
-  makers: [
-    new MakerSquirrel({}),
-    new MakerZIP({}, ['darwin']),
-    new MakerRpm({}),
-    new MakerDeb({}),
-  ],
+  makers: [new MakerZIP({}, ['darwin'])],
+  hooks: {
+    generateAssets: async () => {
+      buildReaderctl();
+    },
+  },
   plugins: [
     new VitePlugin({
-      // `build` can specify multiple entry builds, which can be Main process, Preload scripts, Worker process, etc.
-      // If you are familiar with Vite configuration, it will look really familiar.
       build: [
-        {
-          // `entry` is just an alias for `build.lib.entry` in the corresponding file of `config`.
-          entry: 'src/main.ts',
-          config: 'vite.main.config.ts',
-          target: 'main',
-        },
-        {
-          entry: 'src/preload.ts',
-          config: 'vite.preload.config.ts',
-          target: 'preload',
-        },
+        { entry: 'src/main/index.ts', config: 'vite.main.config.ts', target: 'main' },
+        { entry: 'src/preload/index.ts', config: 'vite.preload.config.ts', target: 'preload' },
       ],
       renderer: [
-        {
-          name: 'main_window',
-          config: 'vite.renderer.config.ts',
-        },
+        { name: 'overlay', config: 'vite.overlay.config.ts' },
+        { name: 'library', config: 'vite.library.config.ts' },
       ],
     }),
-    // Fuses are used to enable/disable various Electron functionality
-    // at package time, before code signing the application
     new FusesPlugin({
       version: FuseVersion.V1,
       [FuseV1Options.RunAsNode]: false,
