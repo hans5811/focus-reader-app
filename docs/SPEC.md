@@ -18,10 +18,10 @@ RSVP, or rapid serial visual presentation, displays one prose word at a time aro
 
 Examples of intact technical units include:
 
-- `provider_account_id`
-- `Numeric(12, 2)`
-- `TierCodeState(BaseModel):`
-- `app/database/models/provider_directory.py`
+- `station_record_id`
+- `Decimal(9, 3)`
+- `SensorReading(BaseModel):`
+- `services/ingest/models/station_registry.py`
 
 The overlay also shows the active Markdown heading hierarchy, nearby sentence context, document progress, and syntax-aware treatment of code. A secondary Library window exists for history, capture setup, preferences, search, and full-document browsing, but it does not open on launch.
 
@@ -261,9 +261,9 @@ The overlay must:
 The current Markdown hierarchy is always visible in the upper-left of Compact, Docked Rail, and Expanded:
 
 ```text
-Provider platform: consolidated schema
-  order_codes replaces order_state
-    TierCodeState
+Sensor pipeline: unified readings schema
+  batch_ids replace run_labels
+    SensorReading
 ```
 
 Requirements:
@@ -310,9 +310,9 @@ Default context quantities:
 
 Parentheses have two distinct meanings and must not share one brittle display rule.
 
-**Technical delimiter:** Parentheses inside an intact technical unit, such as `Numeric(12, 2)`, remain part of that unit and use normal technical styling.
+**Technical delimiter:** Parentheses inside an intact technical unit, such as `Decimal(9, 3)`, remain part of that unit and use normal technical styling.
 
-**Prose aside:** A balanced prose span such as `(derived from the schema)` is annotated across all of its word units. While those units play:
+**Prose aside:** A balanced prose span such as `(inferred from the payload)` is annotated across all of its word units. While those units play:
 
 - The words continue to advance normally through the fixed pivot.
 - The entire parenthetical span is represented on a quieter secondary lane.
@@ -554,7 +554,7 @@ dwellMilliseconds = clamp(
 )
 ```
 
-At 300 WPM, `app/database/models/provider_directory.py` must remain intact and receive materially more time than an ordinary word, with a target range of approximately 500–800 ms after calibration.
+At 300 WPM, `services/ingest/models/station_registry.py` must remain intact and receive materially more time than an ordinary word, with a target range of approximately 500–800 ms after calibration.
 
 User preferences include WPM from 100–700, technical slowdown from 1.0–2.0×, heading pause, sentence pause, and section-entry pause.
 
@@ -858,7 +858,7 @@ Do not load all units from all documents into memory. Prefetch a bounded window 
 - Pivot placement is correct with leading and trailing punctuation.
 - Turning off pivot color does not change fixed alignment.
 - Ordinary prose displays one word per timed unit.
-- `provider_account_id`, `Numeric(12, 2)`, and `app/database/models/provider_directory.py` each display intact.
+- `station_record_id`, `Decimal(9, 3)`, and `services/ingest/models/station_registry.py` each display intact.
 - The long path has a longer dwell than a short prose word at equal WPM.
 - New sections receive heading dwell and a two-unit entry ramp.
 - Pause, step, resume, and layout switching never change unit order.
@@ -870,8 +870,8 @@ Do not load all units from all documents into memory. Prefetch a bounded window 
 - The focused pivot does not move as horizontal context changes.
 - Compact, Docked Rail, and Expanded all use the same inline word-row behavior.
 - Expanded contains no legacy stacked previous/current/next word implementation.
-- `(derived from the schema)` is recognized as one prose-parenthetical span across multiple units and receives quiet secondary treatment throughout.
-- `Numeric(12, 2)` remains a technical unit and is not treated as a prose aside.
+- `(inferred from the payload)` is recognized as one prose-parenthetical span across multiple units and receives quiet secondary treatment throughout.
+- `Decimal(9, 3)` remains a technical unit and is not treated as a prose aside.
 
 ### Headings and progress
 
@@ -927,10 +927,10 @@ Maintain a checked-in test document that includes:
 
 - Deep H1–H6 nesting and repeated heading-level jumps.
 - Long prose with multiple sentences.
-- `(derived from the schema)` and nested or unmatched parentheses.
-- `Numeric(12, 2)` and other technical delimiters.
+- `(inferred from the payload)` and nested or unmatched parentheses.
+- `Decimal(9, 3)` and other technical delimiters.
 - Python, Swift, TypeScript, SQL, shell, JSON, and TOML.
-- `app/database/models/provider_directory.py` and longer paths.
+- `services/ingest/models/station_registry.py` and longer paths.
 - Tables, blockquotes, lists, URLs, UUIDs, and malformed Markdown.
 - Unicode, emoji, combining marks, and CJK.
 - At least one response larger than 1 MB.
