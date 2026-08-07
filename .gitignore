@@ -93,3 +93,7 @@ out/
 
 # Built Go helper
 bin/
+
+# Generated app icon (source of truth is scripts/make-icon.mjs)
+assets/icon.icns
+assets/icon.iconset/
