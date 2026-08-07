@@ -224,6 +224,8 @@ function Progress({
 export interface ReadingStageProps {
   snapshot: StageSnapshot;
   options: StageOptions;
+  /** True during the blank rest that follows a sentence (SPEC 8.6). */
+  resting?: boolean;
   onSeek?: (index: number) => void;
 }
 
@@ -235,7 +237,12 @@ export interface ReadingStageProps {
  * at the same screen coordinate no matter how long the word or its context is —
  * fixed placement comes from layout, not from colour or measurement.
  */
-export function ReadingStage({ snapshot, options, onSeek }: ReadingStageProps): React.JSX.Element {
+export function ReadingStage({
+  snapshot,
+  options,
+  resting = false,
+  onSeek,
+}: ReadingStageProps): React.JSX.Element {
   const unit = snapshot.unit;
   const parts = useMemo(() => (unit ? splitAtPivot(unit) : null), [unit]);
   const [rowWidth, measureRow] = useMeasuredWidth();
@@ -318,21 +325,38 @@ export function ReadingStage({ snapshot, options, onSeek }: ReadingStageProps): 
             </span>
           </div>
         ) : (
-          <div className="word-row" ref={measureRow} style={{ fontSize: `${fit.size}px` }}>
+          <div
+            className={`word-row${resting ? ' is-resting' : ''}`}
+            ref={measureRow}
+            style={{ fontSize: `${fit.size}px` }}
+          >
+            {/*
+              The focus spans are keyed by unit index so React remounts them on
+              every word, which is what restarts the entry fade. The row itself
+              is deliberately *not* keyed: remounting it would tear down and
+              rebuild the ResizeObserver several times a second and re-run font
+              fitting from a zero width.
+            */}
             <div className="lane lane-left">
               {options.showWords &&
                 snapshot.wordsBefore.map((w, i) => (
                   <ContextWord key={w.index} unit={w} distance={snapshot.wordsBefore.length - i} />
                 ))}
-              <span className={`${focusClasses} focus-pre`}>{parts.pre}</span>
+              <span key={unit.index} className={`${focusClasses} focus-pre`}>
+                {parts.pre}
+              </span>
             </div>
 
             <div className={`lane-pivot ${options.showPivotHighlight ? 'is-highlighted' : ''}`}>
-              <span className={focusClasses}>{parts.pivot}</span>
+              <span key={unit.index} className={focusClasses}>
+                {parts.pivot}
+              </span>
             </div>
 
             <div className="lane lane-right">
-              <span className={`${focusClasses} focus-post`}>{parts.post}</span>
+              <span key={unit.index} className={`${focusClasses} focus-post`}>
+                {parts.post}
+              </span>
               {options.showWords &&
                 snapshot.wordsAfter.map((w, i) => (
                   <ContextWord key={w.index} unit={w} distance={i + 1} />

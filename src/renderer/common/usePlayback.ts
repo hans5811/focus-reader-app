@@ -13,6 +13,8 @@ import { api } from './api';
 export interface Playback {
   snapshot: StageSnapshot | null;
   status: PlaybackStatus;
+  /** True during the blank rest that follows a sentence. */
+  resting: boolean;
   index: number;
   unitCount: number;
   hasDocument: boolean;
@@ -37,6 +39,7 @@ export function usePlayback(context: ContextSettings = DEFAULT_CONTEXT): Playbac
   const [index, setIndex] = useState(0);
   const [status, setStatus] = useState<PlaybackStatus>('paused');
   const [snapshot, setSnapshot] = useState<StageSnapshot | null>(null);
+  const [resting, setResting] = useState(false);
 
   const winRef = useRef<ReadingWindow | null>(null);
   const indexRef = useRef(0);
@@ -45,6 +48,7 @@ export function usePlayback(context: ContextSettings = DEFAULT_CONTEXT): Playbac
   const dueAtRef = useRef(0);
   const frameRef = useRef(0);
   const refillingRef = useRef(false);
+  const restingRef = useRef(false);
 
   winRef.current = win;
   indexRef.current = index;
@@ -82,6 +86,9 @@ export function usePlayback(context: ContextSettings = DEFAULT_CONTEXT): Playbac
         revisionRef.current = state.revision;
         setIndex(state.unitIndex);
         dueAtRef.current = 0;
+        // A seek lands on a word, never inside the rest that preceded it.
+        restingRef.current = false;
+        setResting(false);
       }
     };
 
@@ -106,10 +113,18 @@ export function usePlayback(context: ContextSettings = DEFAULT_CONTEXT): Playbac
   // The dwell loop. Each unit is shown for its own scheduled duration, and the
   // deadline is carried forward so a slow frame does not accumulate drift.
   useEffect(() => {
+    const endRest = () => {
+      if (!restingRef.current) return;
+      restingRef.current = false;
+      setResting(false);
+    };
+
     const tick = () => {
       frameRef.current = requestAnimationFrame(tick);
       if (statusRef.current !== 'playing') {
         dueAtRef.current = 0;
+        // Pausing mid-rest must not leave the stage blank.
+        endRest();
         return;
       }
       const current = winRef.current;
@@ -131,11 +146,29 @@ export function usePlayback(context: ContextSettings = DEFAULT_CONTEXT): Playbac
         statusRef.current = 'paused';
         setStatus('paused');
         dueAtRef.current = 0;
+        endRest();
         void api.sendCommand({ type: 'advance', value: i, status: 'paused' });
         return;
       }
-      // Carry the deadline forward rather than restarting from `now`.
-      dueAtRef.current += unit.dwellMs;
+
+      // A sentence has ended: clear the stage for its rest before the next word
+      // arrives. The rest is a phase of this unit, not of the next one, so the
+      // position does not move and a pause during the rest resumes on the word
+      // the reader last saw.
+      if (unit.restMs > 0 && !restingRef.current) {
+        restingRef.current = true;
+        setResting(true);
+        dueAtRef.current += unit.restMs;
+        if (dueAtRef.current < now) dueAtRef.current = now;
+        return;
+      }
+      endRest();
+
+      // Carry the deadline forward rather than restarting from `now`, and bill
+      // the *next* unit's dwell — billing the outgoing unit's would show every
+      // word for its predecessor's duration.
+      const nextUnit = current.units[next - current.start];
+      dueAtRef.current += nextUnit?.dwellMs ?? unit.dwellMs;
       if (dueAtRef.current < now) dueAtRef.current = now;
       indexRef.current = next;
       setIndex(next);
@@ -153,6 +186,7 @@ export function usePlayback(context: ContextSettings = DEFAULT_CONTEXT): Playbac
   return {
     snapshot,
     status,
+    resting,
     index,
     unitCount: win?.unitCount ?? 0,
     hasDocument: win !== null,

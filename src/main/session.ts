@@ -69,6 +69,14 @@ export class ReadingSession {
       if (!loaded) return false;
       this.doc = loaded;
       this.documentId = documentId;
+      /*
+       * Timing is a live preference, not a property of the capture. A stored
+       * document carries whatever dwell and rest values were current when it
+       * was first parsed, so a document captured at 300 WPM would otherwise
+       * replay at 300 WPM forever — and one captured before rests existed
+       * would replay with none.
+       */
+      this.retime();
     }
     const summary = this.store.summary(documentId);
     const resumeIndex = options.resume === false ? 0 : (summary?.unitIndex ?? 0);
@@ -193,10 +201,11 @@ export class ReadingSession {
         settings,
       );
       u.dwellMs = dwell.dwellMs;
+      u.restMs = dwell.restMs;
       u.typeMultiplier = dwell.typeMultiplier;
       u.boundaryMultiplier = dwell.boundaryMultiplier;
       u.lengthFactor = dwell.lengthFactor;
-      remaining += dwell.dwellMs;
+      remaining += dwell.dwellMs + dwell.restMs;
       remainingMs[i] = remaining;
     }
     this.doc.remainingMs = remainingMs;

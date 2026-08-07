@@ -451,6 +451,7 @@ export function buildDocument(source: string, options: ParseOptions = {}): Parse
       boundaryMultiplier: dwell.boundaryMultiplier,
       pivotIndex: pivotIndex(draft.text),
       dwellMs: dwell.dwellMs,
+      restMs: dwell.restMs,
       ...(draft.code ? { code: draft.code } : {}),
       ...(draft.marker ? { marker: draft.marker } : {}),
       ...(draft.listDepth !== undefined ? { listDepth: draft.listDepth } : {}),
@@ -466,7 +467,7 @@ export function buildDocument(source: string, options: ParseOptions = {}): Parse
 
   const remainingMs = new Array<number>(units.length + 1).fill(0);
   for (let i = units.length - 1; i >= 0; i--) {
-    remainingMs[i] = remainingMs[i + 1] + units[i].dwellMs;
+    remainingMs[i] = remainingMs[i + 1] + units[i].dwellMs + units[i].restMs;
   }
 
   return {

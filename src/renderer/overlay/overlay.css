@@ -232,7 +232,13 @@ kbd {
  */
 .lane {
   display: flex;
-  gap: 0.42em;
+  /*
+   * Context words carry no spaces of their own, so this gap *is* the word
+   * space. It is sized to a normal inter-word space (~0.25em) rather than
+   * anything looser: the line either side of the pivot should read as ordinary
+   * running text, not as a spaced-out list of words.
+   */
+  gap: 0.25em;
   align-items: baseline;
   min-width: 0;
   overflow: hidden;
@@ -271,6 +277,42 @@ kbd {
 .focus-word {
   font-weight: 600;
   letter-spacing: -0.005em;
+  /*
+   * A very short fade as each word takes the stage, so successive words are
+   * perceptibly separate events rather than one glyph mutating into the next.
+   * The element is keyed by unit index in the stage, which restarts the
+   * animation on every word.
+   *
+   * At 10ms this is under a single 60Hz frame, so it softens the swap by at
+   * most one frame. Raise WORD_FADE if a more visible transition is wanted.
+   */
+  animation: word-in var(--word-fade, 10ms) linear;
+}
+
+@keyframes word-in {
+  from {
+    opacity: 0.2;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/*
+ * The blank rest after a sentence. `visibility` rather than `opacity` because
+ * context words carry an inline opacity that a class cannot override, and
+ * because hiding must not reflow the row — the pivot stays exactly where it
+ * was so the eye has a fixed point to return to.
+ */
+.word-row.is-resting .focus-word,
+.word-row.is-resting .ctx-word {
+  visibility: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .focus-word {
+    animation: none;
+  }
 }
 
 /*

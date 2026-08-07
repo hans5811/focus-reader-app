@@ -148,6 +148,8 @@ export interface ReadingUnit {
   /** Zero-based grapheme index of the optimal recognition position (SPEC 6.1). */
   pivotIndex: number;
   dwellMs: number;
+  /** Blank rest shown after this unit before the next one appears (SPEC 8.6). */
+  restMs: number;
   code?: CodeMetadata;
   /** Set when this unit *is* a synthesised list marker. */
   marker?: ListMarkerKind;
@@ -209,6 +211,11 @@ export interface TimingSettings {
   sentencePause: number;
   /** Multiplier applied on top of section-entry boundary multipliers. */
   sectionEntryPause: number;
+  /**
+   * 0–2x, scaling the blank rest inserted *after* a sentence ends. 0 disables
+   * the rest entirely and restores continuous presentation.
+   */
+  sentenceBreak: number;
 }
 
 export const DEFAULT_TIMING: TimingSettings = {
@@ -217,6 +224,7 @@ export const DEFAULT_TIMING: TimingSettings = {
   headingPause: 1,
   sentencePause: 1,
   sectionEntryPause: 1,
+  sentenceBreak: 1,
 };
 
 export type CodeGranularity = 'declaration' | 'lexical';

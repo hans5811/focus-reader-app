@@ -81,6 +81,15 @@ export function PreferencesView(): React.JSX.Element {
         {slider('Heading pause', prefs.timing.headingPause, 0.5, 2.5, 0.05, (headingPause) => timing({ headingPause }), (v) => `${v.toFixed(2)}×`)}
         {slider('Sentence pause', prefs.timing.sentencePause, 0.5, 2.5, 0.05, (sentencePause) => timing({ sentencePause }), (v) => `${v.toFixed(2)}×`)}
         {slider('Section-entry pause', prefs.timing.sectionEntryPause, 0.5, 2.5, 0.05, (sectionEntryPause) => timing({ sectionEntryPause }), (v) => `${v.toFixed(2)}×`)}
+        {slider(
+          'Sentence break',
+          prefs.timing.sentenceBreak,
+          0,
+          2,
+          0.05,
+          (sentenceBreak) => timing({ sentenceBreak }),
+          (v) => (v === 0 ? 'off' : `${v.toFixed(2)}×`),
+        )}
       </div>
 
       <div className="panel">

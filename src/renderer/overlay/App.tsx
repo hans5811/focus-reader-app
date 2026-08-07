@@ -228,7 +228,12 @@ export function App(): React.JSX.Element {
       )}
 
       {snapshot ? (
-        <ReadingStage snapshot={snapshot} options={options} onSeek={playback.seek} />
+        <ReadingStage
+          snapshot={snapshot}
+          options={options}
+          resting={playback.resting}
+          onSeek={playback.seek}
+        />
       ) : (
         <ReadingStage
           snapshot={{
@@ -242,6 +247,7 @@ export function App(): React.JSX.Element {
             headingChain: [],
             parenthetical: null,
             dwellMs: 0,
+            restMs: 0,
             progress: {
               unitIndex: 0,
               unitCount: 0,

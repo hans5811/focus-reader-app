@@ -110,6 +110,8 @@ export interface StageSnapshot {
   parenthetical: string | null;
   progress: ProgressModel;
   dwellMs: number;
+  /** Blank rest that follows this unit; 0 when it is not a sentence end. */
+  restMs: number;
 }
 
 export interface ContextSettings {
@@ -233,6 +235,7 @@ export function buildStageSnapshot(
     parenthetical: null,
     progress,
     dwellMs: unit?.dwellMs ?? 0,
+    restMs: unit?.restMs ?? 0,
   };
 
   if (!unit) return snapshot;

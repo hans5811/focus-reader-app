@@ -30,6 +30,31 @@ const BOUNDARY_MULTIPLIER: Record<BoundaryKind, number> = {
 /** SPEC 5.7 / 8.3: prose inside a parenthetical aside. */
 export const PARENTHETICAL_MULTIPLIER = 1.08;
 
+/**
+ * Blank rest inserted *after* a unit, as a fraction of the base word interval.
+ *
+ * This is deliberately not the same lever as the boundary multiplier. Holding
+ * the last word of a sentence longer makes that word slower; it does not mark
+ * the end of the sentence, because at speed a long word and a held word look
+ * identical. Clearing the stage does mark it — the eye gets a real rest and the
+ * sentence lands as a unit rather than as a run of words that happens to stop.
+ *
+ * Expressed as a fraction of the base interval so the rest tracks reading speed:
+ * a fixed 120ms is a beat at 300 WPM and a stall at 600.
+ */
+const REST_FACTOR: Record<BoundaryKind, number> = {
+  none: 0,
+  clause: 0,
+  'code-line': 0,
+  block: 0.45,
+  sentence: 0.6,
+  subsection: 0.9,
+  'major-section': 1.2,
+};
+
+/** A rest longer than this reads as a stall rather than a break. */
+export const MAX_REST_MS = 700;
+
 /** SPEC 8.4: second content unit after a heading. */
 export const ENTRY_RAMP_MULTIPLIER = 1.2;
 
@@ -105,6 +130,18 @@ export interface DwellResult {
   typeMultiplier: number;
   boundaryMultiplier: number;
   dwellMs: number;
+  restMs: number;
+}
+
+/**
+ * Blank rest that follows a unit, in milliseconds (0 when the boundary does not
+ * warrant one, or when the user has turned rests off).
+ */
+export function restMilliseconds(boundary: BoundaryKind, settings: TimingSettings): number {
+  const factor = REST_FACTOR[boundary];
+  if (factor === 0) return 0;
+  const scale = clamp(0, 2, settings.sentenceBreak);
+  return Math.round(clamp(0, MAX_REST_MS, baseMilliseconds(settings.wpm) * factor * scale));
 }
 
 /**
@@ -150,6 +187,7 @@ export function computeDwell(input: DwellInput, settings: TimingSettings): Dwell
     typeMultiplier: tm,
     boundaryMultiplier: bm,
     dwellMs: Math.round(dwellMs),
+    restMs: restMilliseconds(input.boundary, settings),
   };
 }
 

@@ -167,6 +167,7 @@ export class PreferencesService {
     const t = this.cached.timing;
     t.wpm = Math.min(700, Math.max(100, Math.round(t.wpm)));
     t.technicalSlowdown = Math.min(2, Math.max(1, t.technicalSlowdown));
+    t.sentenceBreak = Math.min(2, Math.max(0, t.sentenceBreak));
     const o = this.cached.overlay;
     o.opacity = Math.min(1, Math.max(0.35, o.opacity));
     const c = this.cached.context;

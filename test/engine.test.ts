@@ -6,7 +6,7 @@ import { buildDocument } from '@shared/document';
 import { buildStageSnapshot, headingNeighbour, sectionStartIndex } from '@shared/context';
 import { pivotIndex, pivotIndexForLength } from '@shared/pivot';
 import { buildGuide, formatAccelerator } from '@shared/keys';
-import { computeDwell, lengthFactor, visualLength } from '@shared/timing';
+import { MAX_REST_MS, computeDwell, lengthFactor, restMilliseconds, visualLength } from '@shared/timing';
 import { recognizeToken } from '@shared/text/technical';
 import { tokenizeProse } from '@shared/text/tokenize';
 import { findProseParentheticals } from '@shared/text/parenthetical';
@@ -159,6 +159,67 @@ describe('timing model (SPEC 8)', () => {
       expect(u.dwellMs).toBeGreaterThanOrEqual(80);
       expect(u.dwellMs).toBeLessThanOrEqual(2500);
     }
+  });
+});
+
+describe('sentence rest (SPEC 8.6)', () => {
+  it('rests after a sentence but not mid-sentence', () => {
+    expect(restMilliseconds('sentence', DEFAULT_TIMING)).toBeGreaterThan(0);
+    expect(restMilliseconds('none', DEFAULT_TIMING)).toBe(0);
+    expect(restMilliseconds('clause', DEFAULT_TIMING)).toBe(0);
+  });
+
+  it('rests longer for stronger boundaries', () => {
+    const sentence = restMilliseconds('sentence', DEFAULT_TIMING);
+    expect(restMilliseconds('block', DEFAULT_TIMING)).toBeLessThan(sentence);
+    expect(restMilliseconds('subsection', DEFAULT_TIMING)).toBeGreaterThan(sentence);
+    expect(restMilliseconds('major-section', DEFAULT_TIMING)).toBeGreaterThan(
+      restMilliseconds('subsection', DEFAULT_TIMING),
+    );
+  });
+
+  it('scales the rest with reading speed so it stays a beat, not a stall', () => {
+    const slow = restMilliseconds('sentence', { ...DEFAULT_TIMING, wpm: 150 });
+    const fast = restMilliseconds('sentence', { ...DEFAULT_TIMING, wpm: 600 });
+    expect(slow).toBeGreaterThan(fast);
+    expect(fast).toBeGreaterThan(0);
+  });
+
+  it('is disabled at 0 and clamped at the top end', () => {
+    expect(restMilliseconds('sentence', { ...DEFAULT_TIMING, sentenceBreak: 0 })).toBe(0);
+    expect(
+      restMilliseconds('major-section', { ...DEFAULT_TIMING, wpm: 100, sentenceBreak: 2 }),
+    ).toBeLessThanOrEqual(MAX_REST_MS);
+  });
+
+  /*
+   * The regression that motivates this: sentence ends are detected with ICU
+   * sentence-break rules, not by looking for a period. An abbreviation mid
+   * sentence must not end it, and a sentence that ends without a period still
+   * must.
+   */
+  it('does not break on a period that is not a sentence end', () => {
+    const doc = buildDocument('We deploy approx. twice a week and it works.');
+    const mid = doc.units.find((u) => u.text === 'approx.');
+    expect(mid).toBeDefined();
+    expect(mid!.restMs).toBe(0);
+
+    const last = doc.units[doc.units.length - 1];
+    expect(last.text).toBe('works.');
+    expect(last.restMs).toBeGreaterThan(0);
+  });
+
+  it('breaks at every sentence end in a multi-sentence paragraph', () => {
+    const doc = buildDocument('First one. Second one! Third one? Done.');
+    const resting = doc.units.filter((u) => u.restMs > 0).map((u) => u.text);
+    expect(resting).toEqual(['one.', 'one!', 'one?', 'Done.']);
+  });
+
+  it('counts rests in the remaining-time estimate', () => {
+    const text = 'Alpha beta gamma. Delta epsilon zeta.';
+    const withRest = buildDocument(text);
+    const without = buildDocument(text, { timing: { sentenceBreak: 0 } });
+    expect(withRest.totalMs).toBeGreaterThan(without.totalMs);
   });
 });
 
