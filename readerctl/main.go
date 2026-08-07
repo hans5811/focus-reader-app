@@ -51,6 +51,11 @@ func main() {
 	switch os.Args[1] {
 	case "ingest":
 		os.Exit(runIngest(os.Args[2:]))
+	case "apply-update":
+		// Unlike ingest, this must report failure: nothing downstream depends on
+		// it exiting 0, and a silent failure would leave the user on a stale
+		// build believing they had updated.
+		os.Exit(runApplyUpdate(os.Args[2:]))
 	case "version":
 		fmt.Println(version)
 		os.Exit(0)

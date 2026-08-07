@@ -5,6 +5,7 @@ import type { ReadingSession } from './session';
 import type { ShortcutService } from './shortcuts';
 import type { Store } from './store/db';
 import type { LibraryWindowService } from './windows/library';
+import type { UpdateService } from './update/service';
 import type { OverlayWindowService } from './windows/overlay';
 
 /** The two entry-point modes plus the shared open paths (SPEC 4.2). */
@@ -25,6 +26,7 @@ export interface AppContext {
   library: LibraryWindowService;
   shortcuts: ShortcutService;
   inbox: InboxWatcher;
+  updates: UpdateService;
   entry: EntryPoints;
   supportDir: string;
   homeDir: string;

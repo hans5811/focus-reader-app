@@ -1,5 +1,6 @@
 import { Menu, Tray, nativeImage } from 'electron';
 import type { OverlayLayout } from '@shared/types';
+import type { UpdateStatusMessage } from '@shared/update/status';
 
 export interface TrayActions {
   readClipboard(): void;
@@ -12,6 +13,8 @@ export interface TrayActions {
   openSetup(): void;
   openPreferences(): void;
   openShortcuts(): void;
+  checkForUpdate(): void;
+  installUpdate(): void;
   quit(): void;
 }
 
@@ -20,6 +23,7 @@ export interface TrayState {
   clickThrough: boolean;
   pinned: boolean;
   canResume: boolean;
+  update: UpdateStatusMessage;
 }
 
 const SIZE = 44; // 22pt at 2x
@@ -65,6 +69,45 @@ function trayImage(): Electron.NativeImage {
   });
   image.setTemplateImage(true);
   return image;
+}
+
+/**
+ * The update entry states the size of what it is about to do. A user deciding
+ * whether to restart deserves to know it is a 0.7 MB fetch and not a 121 MB one,
+ * and the difference is the entire point of the delta path.
+ */
+function updateItem(
+  status: UpdateStatusMessage,
+  actions: TrayActions,
+): Electron.MenuItemConstructorOptions {
+  switch (status.state) {
+    case 'checking':
+      return { label: 'Checking for Updates…', enabled: false };
+    case 'downloading': {
+      const pct = status.total > 0 ? Math.round((status.received / status.total) * 100) : 0;
+      return { label: `Downloading ${status.version}… ${pct}%`, enabled: false };
+    }
+    case 'ready':
+      return {
+        label: `Restart to Update to ${status.version} (${formatBytes(status.bytes)})`,
+        click: () => actions.installUpdate(),
+      };
+    case 'manual':
+      return {
+        label: `Focus Reader ${status.version} is available…`,
+        click: () => actions.checkForUpdate(),
+      };
+    case 'up-to-date':
+      return { label: 'Focus Reader is up to date', enabled: false };
+    default:
+      return { label: 'Check for Updates…', click: () => actions.checkForUpdate() };
+  }
+}
+
+function formatBytes(bytes: number): string {
+  return bytes < 1_000_000
+    ? `${Math.round(bytes / 1000)} KB`
+    : `${(bytes / 1_000_000).toFixed(1)} MB`;
 }
 
 /**
@@ -129,6 +172,8 @@ export class TrayController {
       { label: 'Library…', click: () => this.actions.openLibrary() },
       { label: 'Capture & Setup…', click: () => this.actions.openSetup() },
       { label: 'Preferences…', accelerator: 'Command+,', click: () => this.actions.openPreferences() },
+      { type: 'separator' },
+      updateItem(state.update, this.actions),
       { type: 'separator' },
       { label: 'Quit Focus Reader', accelerator: 'Command+Q', click: () => this.actions.quit() },
     ]);

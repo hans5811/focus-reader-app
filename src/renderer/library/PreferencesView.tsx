@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { PreferencesMessage } from '@shared/ipc';
 import type { CaptureSource, OverlayLayout } from '@shared/types';
 import { api } from '../common/api';
+import { UpdatePanel } from './UpdatePanel';
 
 export function PreferencesView(): React.JSX.Element {
   const [prefs, setPrefs] = useState<PreferencesMessage | null>(null);
@@ -62,6 +63,8 @@ export function PreferencesView(): React.JSX.Element {
       <header className="view-header">
         <h1>Preferences</h1>
       </header>
+
+      <UpdatePanel />
 
       <div className="panel">
         <h2>Reading speed</h2>

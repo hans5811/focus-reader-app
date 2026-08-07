@@ -1,7 +1,7 @@
 {
   "name": "focus-reader",
   "productName": "Focus Reader",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Local-first menu-bar RSVP reader for long technical documents and coding-agent responses.",
   "main": ".vite/build/main.js",
   "private": true,
@@ -16,7 +16,9 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "eslint --ext .ts,.tsx src test"
+    "lint": "eslint --ext .ts,.tsx src test",
+    "build:update": "node scripts/make-update.mjs",
+    "make:update-key": "node scripts/make-update-key.mjs"
   },
   "keywords": [],
   "author": {

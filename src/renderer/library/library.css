@@ -429,3 +429,16 @@ input[type='range'] { accent-color: rgb(var(--accent)); }
 @media (prefers-contrast: more) {
   :root { --muted: 200 206 220; --rule: 255 255 255 / 0.3; }
 }
+
+/* Update panel ------------------------------------------------------------ */
+
+.update-progress {
+  width: 100%;
+  height: 4px;
+  margin-top: 8px;
+  accent-color: rgb(var(--accent));
+}
+
+.error-text {
+  color: rgb(var(--accent));
+}

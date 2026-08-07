@@ -1,5 +1,8 @@
 import type { ContextSettings } from './context';
+import type { UpdateStatusMessage } from './update/status';
 import type { ReadingWindow } from './window';
+
+export type { UpdateStatusMessage };
 import type {
   BlockKind,
   CaptureSource,
@@ -174,6 +177,10 @@ export const INVOKE_CHANNELS = [
   'setup:rebindShortcut',
   'app:openLibrary',
   'app:quit',
+  'update:status',
+  'update:check',
+  'update:install',
+  'update:openDownload',
 ] as const;
 
 export type InvokeChannel = (typeof INVOKE_CHANNELS)[number];
@@ -187,6 +194,7 @@ export const EVENT_CHANNELS = [
   'library:changed',
   'toast',
   'library:navigate',
+  'update:status',
 ] as const;
 
 export type EventChannel = (typeof EVENT_CHANNELS)[number];
@@ -228,5 +236,9 @@ export interface FocusReaderApi {
   rebindShortcut(action: string, accelerator: string): Promise<ShortcutStatus[]>;
   openLibrary(view?: 'library' | 'browse' | 'setup' | 'preferences'): Promise<void>;
   quit(): Promise<void>;
+  updateStatus(): Promise<UpdateStatusMessage>;
+  checkForUpdate(): Promise<UpdateStatusMessage>;
+  installUpdate(): Promise<{ ok: boolean; error?: string }>;
+  openUpdateDownload(): Promise<{ ok: boolean; error?: string }>;
   on(channel: EventChannel, listener: (payload: never) => void): () => void;
 }

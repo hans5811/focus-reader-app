@@ -11,6 +11,7 @@ import { ReadingSession } from './session';
 import { ShortcutService } from './shortcuts';
 import { Store } from './store/db';
 import { TrayController } from './tray';
+import { UpdateService } from './update/service';
 import { LibraryWindowService, markQuitting } from './windows/library';
 import { OverlayWindowService } from './windows/overlay';
 
@@ -98,6 +99,7 @@ app.whenReady().then(() => {
       layout: overlay.currentLayout,
       clickThrough: prefs.all().overlay.clickThrough,
       pinned: prefs.all().overlay.pinned,
+      update: updates.current(),
       canResume: session.hasDocument() || store.list(1).length > 0,
     });
   }
@@ -247,6 +249,11 @@ app.whenReady().then(() => {
     openSetup: () => library.open('setup'),
     openPreferences: () => library.open('preferences'),
     openShortcuts: () => library.open('shortcuts'),
+    checkForUpdate: () => void updates.check(true),
+    installUpdate: () => {
+      const result = updates.installAndRestart();
+      if (!result.ok) toast({ level: 'error', message: result.error ?? 'The update could not start.' });
+    },
     quit: () => quit(),
   });
 
@@ -257,12 +264,18 @@ app.whenReady().then(() => {
     session.flushPosition();
     shortcuts.unregisterAll();
     inbox.stop();
+    updates.stop();
     tray.destroy();
     store.close();
     app.quit();
   }
 
   // -------------------------------------------------------------- app context
+
+  const updates = new UpdateService(supportDir, readerctlPath, (status) => {
+    broadcast('update:status', status);
+    refreshTray();
+  });
 
   const ctx: AppContext = {
     store,
@@ -272,6 +285,7 @@ app.whenReady().then(() => {
     library,
     shortcuts,
     inbox,
+    updates,
     entry,
     supportDir,
     homeDir: os.homedir(),
@@ -285,6 +299,7 @@ app.whenReady().then(() => {
   };
 
   registerIpc(ctx);
+  updates.start();
 
   // ------------------------------------------------------------- shortcuts
 
@@ -325,6 +340,7 @@ app.whenReady().then(() => {
     clickThrough: prefs.all().overlay.clickThrough,
     pinned: prefs.all().overlay.pinned,
     canResume: store.list(1).length > 0,
+    update: updates.current(),
   });
 
   inbox.start();

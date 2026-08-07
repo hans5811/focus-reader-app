@@ -66,6 +66,12 @@ const api = {
   rebindShortcut: (action: string, accelerator: string) =>
     invoke('setup:rebindShortcut', { action, accelerator }),
 
+  // ------------------------------------------------------------------ updates
+  updateStatus: () => invoke('update:status'),
+  checkForUpdate: () => invoke('update:check'),
+  installUpdate: () => invoke('update:install'),
+  openUpdateDownload: () => invoke('update:openDownload'),
+
   // --------------------------------------------------------------------- app
   openLibrary: (view?: string) => invoke('app:openLibrary', { view }),
   quit: () => invoke('app:quit'),

@@ -340,6 +340,13 @@ export function registerIpc(ctx: AppContext): void {
   });
 
   handle('app:quit', () => ctx.quit());
+
+  // --------------------------------------------------------------------- updates
+
+  handle('update:status', () => ctx.updates.current());
+  handle('update:check', () => ctx.updates.check(true));
+  handle('update:install', () => ctx.updates.installAndRestart());
+  handle('update:openDownload', () => ctx.updates.openFullDownload());
 }
 
 const TEST_CAPTURE_BODY = `# Focus Reader test capture

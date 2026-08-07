@@ -29,6 +29,8 @@ Requires Node 20+, Go 1.21+, and macOS.
 | `npm run package` | Builds `.app` (the `generateAssets` hook rebuilds `readerctl` and the icon) |
 | `npm run make` | Produces a distributable ZIP |
 | `npm run build:icon` | Regenerates `assets/icon.icns` |
+| `npm run build:update` | Builds the signed delta-update payload into `out/update` |
+| `npm run make:update-key` | Generates the update-signing keypair (run once) |
 | `npm test` | Vitest — engine, storage, capture, session state machine |
 | `npm run test:helper` | Go tests for `readerctl` |
 | `npm run typecheck` | `tsc --noEmit` |
@@ -198,8 +200,81 @@ config is written from the documented contract, not from a build that ran.
 ### Beyond that
 
 GitHub Releases or a Homebrew cask are just delivery for the notarized artifact
-and need the tier above to be pleasant. There is no auto-update (SPEC 20 leaves
-it open), so every update is a manual re-download.
+and need the tier above to be pleasant.
+
+---
+
+## Updating without re-downloading
+
+The bundle is ~121 MB, of which **the app's own code is 775 KB** — everything
+else is the Electron runtime. So a release that changes only app code does not
+need to ship the runtime again. Focus Reader updates itself by replacing one
+file inside its own bundle:
+
+```
+check(scheduled) from 1.0.0 electron=43.3.0 signed=false writable=true
+manifest 1.0.1 -> decision delta
+downloading 1.0.1 0/775194
+ready 1.0.1 (775194 bytes staged)
+        ... install and relaunch ...
+check(scheduled) from 1.0.1 -> up-to-date
+```
+
+That is a real log from a 1.0.0 install updating itself off the live release.
+**0.64% of a full download.**
+
+### Why it takes a helper process
+
+Electron keeps `app.asar` mapped for the lifetime of the process, so the app
+cannot rewrite its own code. It downloads and verifies the payload, stages it,
+spawns `readerctl apply-update` detached, and quits. The helper waits for the
+process to exit, then does three things that must happen together or not at all:
+
+1. replace `Contents/Resources/app.asar`;
+2. write the new asar **header** hash into `ElectronAsarIntegrity` in
+   `Info.plist` — skip this and Electron aborts at startup with a fatal
+   integrity error, which is exactly what the `EnableEmbeddedAsarIntegrityValidation`
+   fuse is for;
+3. re-sign the bundle ad-hoc, because 1 and 2 invalidate the signature.
+
+Any failure restores both files and re-signs. The backups are written **outside**
+the bundle: a stray file under `Contents/` is treated by `codesign` as an
+unsigned bundle subcomponent, and signing fails naming the backup.
+
+### Trust
+
+Apple code signing cannot secure this channel — the bundle is re-signed ad-hoc
+on the user's own machine, so its signature says nothing about where the payload
+came from. Instead, `update.json` carries a **detached Ed25519 signature**
+verified against a public key compiled into the app, the same approach Sparkle
+takes. A manifest that does not verify is discarded before its contents are
+read, so a compromised release host still cannot push code. The private key
+lives at `~/.config/focus-reader/update-signing-key.pem`, never in the repo.
+
+The payload is checked twice against the digest in the signed manifest: once on
+download, and again by the helper before it touches the bundle.
+
+### When a delta is refused
+
+Deltas are declined — with the reason shown in the UI, and a full download
+offered instead — when the release changes the Electron runtime, when the bundle
+carries a Developer ID signature (an ad-hoc re-sign would strip it, and under the
+hardened runtime the app would not launch), when macOS is running the app
+translocated from a read-only mount, or when the bundle is not writable.
+
+### Cutting a release
+
+```bash
+npm version <x.y.z> --no-git-tag-version
+npm run make
+FR_UPDATE_NOTES="What changed." npm run build:update
+gh release create v<x.y.z> out/update/* --title "Focus Reader <x.y.z>"
+```
+
+`out/update` holds everything a release needs, including the zip under its
+published name — so there is no rename step for the manifest and the artifact to
+drift across. Diagnostics land in `update.log` in the support directory:
+versions, decisions, and sizes, no document content.
 
 ### Why re-signing is needed at all
 
@@ -257,7 +332,10 @@ lists in `contentKeys` to whatever those versions actually document.
 
 ## What is verified
 
-- 100 Vitest tests and 8 Go tests pass; `tsc --noEmit` and ESLint are clean.
+- 122 Vitest tests and 14 Go tests pass; `tsc --noEmit` and ESLint are clean.
+- A packaged 1.0.0 install updated itself to 1.0.1 off the live GitHub release,
+  moving 775 KB instead of 121 MB, and the relaunched app reports 1.0.1 with a
+  valid signature and an `Info.plist` integrity hash matching its new asar.
 - Packaged `.app` builds and launches as a menu-bar-only accessory app.
 - End-to-end on a packaged build: `readerctl` → inbox → import → SQLite, with
   `services/ingest/models/station_registry.py` at 570 ms (SPEC 8.5 targets
@@ -283,7 +361,7 @@ rather than assumed:
   driven by `FR_SIGN_IDENTITY` / `APPLE_*`, but no certificate exists here, so it
   has never been executed. Builds are ad-hoc signed and Gatekeeper rejects them
   on another machine — see [Sharing a build](#sharing-a-build).
-- **Login item and auto-update** (SPEC 18, Phase 4) — SPEC 20 leaves both open.
+- **Login item** (SPEC 18, Phase 4) — SPEC 20 leaves it open.
 - **Visual regression snapshots** (SPEC 17): pivot-coordinate assertions are
   covered structurally by the grid and by manual screenshot verification, not by
   an automated image-diff suite.
